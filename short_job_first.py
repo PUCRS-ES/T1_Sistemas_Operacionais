@@ -19,7 +19,7 @@ class Processo():
         return str1 + str2 + str3 + str4 + str5
 
 
-with open("arquivos_para_teste/trab-so1-teste2.txt", "r") as file:
+with open("arquivos_para_teste/trab-so1-teste1.txt", "r") as file:
     entrada = file.read().split('\n')
     numero_processos = int(entrada[0])
     tamanho_fatia_tempo = int(entrada[1])
@@ -56,12 +56,10 @@ with open("arquivos_para_teste/trab-so1-teste2.txt", "r") as file:
             saida += "-"
             tempo_atual += 1
         else:
-            tempo_restando = tamanho_fatia_tempo
             processo_escolhido = processos_com_menor_tempo_e_maior_prioridade[0]
-            while tempo_restando > 0:
+            while processo_escolhido.tempo_execucao > 0:
                 saida += processo_escolhido.id
                 processo_escolhido.tempo_execucao -= 1
-                tempo_restando -= 1
                 tempo_atual += 1
 
                 if processo_escolhido.tempo_execucao == 0:
