@@ -6,8 +6,9 @@ class Processo():
         dados = dados.split(' ')
         self.tempo_chegada = int(dados[0])
         self.tempo_execucao = int(dados[1])
+        self.tempo_execucao_restando = int(dados[1])
         self.prioridade = int(dados[2])
-        self.concluido = False
+        self.concluido = None
         self.id = dados[3]
 
     def __str__(self):
@@ -17,6 +18,30 @@ class Processo():
         str4 = "Concluido: " + str(self.concluido) + "\n"
         str5 = "Id: " + self.id
         return str1 + str2 + str3 + str4 + str5
+
+
+def busca_novos_processos(lista_de_processos):
+    apenas_processos_nao_concluidos = filter(lambda x: x.concluido is None, lista_de_processos)
+    apenas_processos_iniciados = filter(
+        lambda x: x.tempo_chegada <= tempo_atual,
+        apenas_processos_nao_concluidos
+    )
+    processos_ordenados_por_prioridade = sorted(apenas_processos_iniciados, key=lambda x: x.prioridade)
+    apenas_processos_da_maior_prioridade = []
+    if len(processos_ordenados_por_prioridade) > 0:
+        apenas_processos_da_maior_prioridade = filter(
+            lambda x: x.prioridade == processos_ordenados_por_prioridade[0].prioridade,
+            processos_ordenados_por_prioridade
+        )
+    return apenas_processos_da_maior_prioridade
+
+
+def busca_processo_prioritario(lista_de_processos):
+    proc = busca_novos_processos(lista_de_processos)
+    if len(proc) > 0:
+        return proc[0]
+    else:
+        return None
 
 
 with open("arquivos_para_teste/trab-so1-teste3.txt", "r") as file:
@@ -33,54 +58,35 @@ with open("arquivos_para_teste/trab-so1-teste3.txt", "r") as file:
 
     tempo_atual = 1
     saida = ""
-    processo_anterior = None
-    while len(filter(lambda x: x.concluido is False, lista_de_processos)) > 0:
-        apenas_processos_nao_concluidos = filter(lambda x: x.concluido is False, lista_de_processos)
-        apenas_processos_iniciados = filter(
-            lambda x: x.tempo_chegada <= tempo_atual,
-            apenas_processos_nao_concluidos
-        )
-        processos_ordenados_por_prioridade = sorted(
-            apenas_processos_iniciados,
-            key=lambda x: x.prioridade
-        )
+    while len(filter(lambda x: x.concluido is None, lista_de_processos)) > 0:
+        processos_ordenados_por_prioridade = busca_novos_processos(lista_de_processos)
 
         if len(processos_ordenados_por_prioridade) == 0:
             saida += "-"
         else:
-            apenas_processos_com_prioridade_maxima = filter(
-                lambda x: x.prioridade <= processos_ordenados_por_prioridade[0].prioridade,
-                processos_ordenados_por_prioridade
-            )
-
-            if processo_anterior in apenas_processos_com_prioridade_maxima:
-                apenas_processos_com_prioridade_maxima.remove(processo_anterior)
-
-            for processo in apenas_processos_com_prioridade_maxima:
+            processos_recentemente_atendidos = []
+            while len(processos_ordenados_por_prioridade) > 0:
+                processo = processos_ordenados_por_prioridade[0]
                 for i in range(0, tamanho_fatia_tempo):
-                    # Pega o processo com a maior prioridade no momento
-                    processo_atual = processo
-
-                    # Se o processo atual for diferente do instante anterior, registra a troca
-                    # de contexto e marca que perdeu 2 seg trocando de contexto
-                    # if processo_anterior is not None and processo_atual.id != processo_anterior.id:
-                    #     saida += "TC"
-                    #     tempo_atual += TROCA_CONTEXTO
-
-                    # Registra qual processo realizou trabaho, desconta seu tempo, e aumenta
-                    # o tempo decorrido
-                    saida += processo_atual.id
-                    processo_atual.tempo_execucao -= 1
+                    saida += processo.id
+                    processo.tempo_execucao_restando -= 1
                     tempo_atual += 1
 
-                    # Se o processo fez todo o trabalho, marca como concluido e muda de contexto
-                    if processo_atual.tempo_execucao == 0:
-                        processo_atual.concluido = True
-                        saida += "TC"
-                        tempo_atual += TROCA_CONTEXTO
+                    if busca_processo_prioritario(lista_de_processos).prioridade < processo.prioridade:
+                        break
 
-                processo_anterior = processo_atual
+                    if processo.tempo_execucao_restando == 0:
+                        processo.concluido = tempo_atual
+                        break
+
                 saida += "TC"
                 tempo_atual += TROCA_CONTEXTO
+
+                processos_recentemente_atendidos.append(processo)
+                processos_ordenados_por_prioridade = busca_novos_processos(lista_de_processos)
+
+                for p in processos_recentemente_atendidos:
+                    if p in processos_ordenados_por_prioridade:
+                        processos_ordenados_por_prioridade.remove(p)
 
     print saida
