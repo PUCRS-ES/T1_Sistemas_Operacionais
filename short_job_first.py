@@ -10,6 +10,7 @@ class Processo():
         self.prioridade = int(dados[2])
         self.concluido = None
         self.inicio_da_execucao = None
+        self.tempo_espera = 0
         self.id = dados[3]
 
     def __str__(self):
@@ -22,16 +23,23 @@ class Processo():
         return str1 + str2 + str3 + str4 + str5 + str6
 
     def tempo_resposta(self):
-        print "Tempo de resposta: " + str(self.inicio_da_execucao - self.tempo_chegada) + "\n"
+        print "Tempo de resposta: " + str(self.inicio_da_execucao - self.tempo_chegada)
 
     def tempo_turn_around(self):
-        print "Tempo de turn around: " + str(self.concluido - self.tempo_chegada) + "\n"
+        print "Tempo de turn around: " + str(self.concluido - self.tempo_chegada)
 
-    def tempo_espera(self):
-        print "Tempo de espera: " + str(tempo_atual - self.tempo_execucao - self.tempo_chegada)
+    def tempo_espera_atual(self):
+        print "Tempo de espera: " + str(self.tempo_espera)
 
 
-with open("arquivos_para_teste/trab-so1-teste1.txt", "r") as file:
+def incrementa_tempo_nos_outros_processos(valor_incremento, lista_de_processos, proc_ignorar):
+    for proc in lista_de_processos:
+        outros_processos = (proc.id != proc_ignorar.id)
+        if outros_processos and tempo_atual >= proc.tempo_chegada and proc.concluido is None:
+            proc.tempo_espera += valor_incremento
+
+
+with open("arquivos_para_teste/trab-so1-teste3.txt", "r") as file:
     entrada = file.read().split('\n')
     numero_processos = int(entrada[0])
     tamanho_fatia_tempo = int(entrada[1])
@@ -72,10 +80,22 @@ with open("arquivos_para_teste/trab-so1-teste1.txt", "r") as file:
                 processo_escolhido.inicio_da_execucao = tempo_atual
 
             for i in range(0, processo_escolhido.tempo_execucao):
+
+                incrementa_tempo_nos_outros_processos(1, lista_de_processos, processo_escolhido)
+
+                # Registra que fizemos trabalho neste processo
                 saida += processo_escolhido.id
                 tempo_atual += 1
+
             processo_escolhido.concluido = tempo_atual
             saida += "TC"
+            incrementa_tempo_nos_outros_processos(TROCA_CONTEXTO, lista_de_processos, processo_escolhido)
             tempo_atual += TROCA_CONTEXTO
 
     print saida
+
+    for index, processo in enumerate(lista_de_processos):
+        print "\nProcesso " + str(index + 1)
+        processo.tempo_turn_around()
+        processo.tempo_resposta()
+        processo.tempo_espera_atual()
